@@ -2,11 +2,87 @@ function notImplemented() {
   throw new Error('Корзина ещё не реализована. Сначала прочитайте тесты.');
 }
 
-function addToCart() { return notImplemented(); }
-function changeQuantity() { return notImplemented(); }
-function removeFromCart() { return notImplemented(); }
-function calculateCartSubtotal() { return notImplemented(); }
-function calculateOrderTotal() { return notImplemented(); }
+function addToCart(cart, product, quantity) {
+  if (quantity < 1) {
+    throw new RangeError('Укажите количество товара, отличное от нуля.');
+  }
+
+  if (!cart.length) {
+    if (quantity > product.stock) {
+      throw new RangeError('Товар закончился!');
+    }
+    cart.push({ ...product, quantity });
+    return cart;
+  }
+
+  const item = cart.find(({ id }) => id === product.id);
+
+  if (item) {
+    if (quantity + item.quantity > product.stock) {
+      throw new RangeError('Товар закончился!');
+    }
+    item.quantity += quantity;
+    return cart;
+  } else {
+    if (quantity > product.stock) {
+      throw new RangeError('Товар закончился!');
+    }
+    cart.push({ ...product, quantity });
+    return cart;
+  }
+}
+
+function changeQuantity(cart, id, quantity) {
+  if (quantity < 1) {
+    throw new RangeError('Количество товара должно быть больше нуля!');
+  }
+
+  const item = cart.find(({ id: itemId }) => itemId === id);
+
+  if (item) {
+    if (quantity > item.stock) {
+      throw new RangeError('Указанное количество больше остатка!');
+    }
+    item.quantity = quantity;
+  }
+
+  return cart;
+}
+
+function removeFromCart(cart, id) {
+  const item = cart.find(({ id: itemId }) => itemId === id);
+
+  if (item) {
+    cart.splice(cart.indexOf(item), 1);
+  }
+
+  return cart;
+}
+
+function calculateCartSubtotal(cart) {
+  return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+}
+
+function calculateOrderTotal(cart, promoCode) {
+  const subtotal = calculateCartSubtotal(cart);
+  const total = { subtotal };
+
+  if (subtotal < 50_000) {
+    total.delivery = 30_000;
+  } else {
+    total.delivery = 0;
+  }
+
+  if (subtotal >= 20_000 && promoCode === 'SAVE10') {
+    total.discount = subtotal * 0.1;
+  } else {
+    total.discount = 0;
+  }
+
+  total.total = total.subtotal - total.discount + total.delivery;
+
+  return total;
+}
 
 const cartApi = { addToCart, changeQuantity, removeFromCart, calculateCartSubtotal, calculateOrderTotal };
 
